@@ -1,0 +1,310 @@
+📜 LISTA COMPLETA DE COMANDOS - CYBERGHOST OSINT
+
+🚀 COMANDOS PRINCIPAIS
+
+🏁 INICIALIZAÇÃO
+cyberghost                       # Menu interativo
+cyberghost menu                  # Abrir menu principal
+cyberghost --help                # Ajuda geral
+cyberghost --version             # Ver versão
+
+📥 INSTALAÇÃO E ATUALIZAÇÃO
+cyberghost install               # Instalar tudo (30-60min)
+cyberghost install --force       # Forçar instalação completa
+cyberghost update                # Atualizar CyberGhost
+cyberghost update --all          # Atualizar todas as ferramentas
+cyberghost update --tools        # Atualizar apenas ferramentas
+
+🔍 SCAN BÁSICO
+cyberghost scan <target>         # Scan básico
+cyberghost scan example.com      # Domínio
+cyberghost scan 192.168.1.1      # IP
+cyberghost scan @username        # Username
+cyberghost scan email@dom.com    # Email
+
+🎯 SCAN AVANÇADOS
+cyberghost scan <target> full           # Todos módulos
+cyberghost scan <target> recon          # Reconhecimento
+cyberghost scan <target> social         # Redes sociais
+cyberghost scan <target> business       # Business intel
+cyberghost scan <target> threat         # Threat intel
+cyberghost scan <target> github         # GitHub intel
+cyberghost scan <target> email          # Email intel
+cyberghost scan <target> mobile         # Mobile apps
+cyberghost scan <target> dns            # DNS profundo
+
+⚙️ OPÇÕES DE SCAN
+cyberghost scan <target> --fast         # Modo rápido
+cyberghost scan <target> --deep         # Modo profundo
+cyberghost scan <target> --stealth      # Modo stealth
+cyberghost scan <target> --quiet        # Silencioso
+cyberghost scan <target> --verbose      # Detalhado
+cyberghost scan <target> --threads=10   # Definir threads
+cyberghost scan <target> --timeout=60   # Definir timeout
+
+📊 BATCH PROCESSING
+cyberghost batch <file.txt>             # Scan em lote
+cyberghost batch targets.txt            # Arquivo com alvos
+cyberghost batch <file> --concurrent=5  # Com concorrência
+cyberghost batch <file> --resume        # Continuar batch
+
+👁️ MONITORAMENTO
+cyberghost monitor <target>             # Monitorar alvo
+cyberghost monitor <target> --interval=6h   # Intervalo
+cyberghost monitor <target> --alerts        # Com alertas
+cyberghost monitor <target> --email=email@  # Alertas por email
+cyberghost monitor --list               # Listar monitoramentos
+
+📁 GESTÃO DE DADOS
+cyberghost reports                      # Listar relatórios
+cyberghost reports --clean-old          # Limpar relatórios antigos
+cyberghost export <scan_dir> --format=json  # Exportar dados
+cyberghost export <scan_dir> --format=csv   # Exportar CSV
+cyberghost correlate <scan_dir>         # Correlacionar dados
+
+🛠️ FERRAMENTAS AUXILIARES
+cyberghost tools                        # Listar ferramentas
+cyberghost tools --update               # Atualizar ferramentas
+cyberghost tools --check                # Verificar saúde
+cyberghost doctor                       # Diagnóstico do sistema
+cyberghost test                         # Testar funcionalidades
+cyberghost test --apis                  # Testar APIs
+
+⚙️ CONFIGURAÇÃO
+cyberghost config                       # Menu configuração
+cyberghost config --show                # Mostrar configuração
+cyberghost config --reset               # Resetar configuração
+cyberghost config --edit                # Editar configuração
+cyberghost apis                         # Gerenciar APIs
+cyberghost apis --add                   # Adicionar API
+cyberghost apis --list                  # Listar APIs configuradas
+
+🧹 LIMPEZA
+cyberghost clean                        # Limpar temporários
+cyberghost clean --logs                 # Limpar logs
+cyberghost clean --temp                 # Limpar arquivos temporários
+cyberghost clean --reports              # Limpar relatórios antigos
+cyberghost clean --all                  # Limpar tudo
+
+📊 DASHBOARD
+cyberghost dashboard                    # Iniciar dashboard
+cyberghost dashboard --port=8080        # Porta específica
+cyberghost dashboard --host=0.0.0.0     # Acessível na rede
+cyberghost stats                        # Estatísticas
+cyberghost stats --detailed             # Estatísticas detalhadas
+
+🎓 TREINAMENTO
+cyberghost training                     # Modo treinamento
+cyberghost training --scenarios         # Cenários de treinamento
+cyberghost training --ctf               # Modo CTF
+cyberghost training --demo              # Modo demonstração
+cyberghost examples                     # Exemplos de uso
+
+🔒 SEGURANÇA
+cyberghost proxy --add <proxy>          # Adicionar proxy
+cyberghost proxy --list                 # Listar proxies
+cyberghost proxy --test                 # Testar proxies
+cyberghost anonymize                    # Ativar anonimização
+cyberghost anonymize --tor              # Usar TOR
+
+📤 COMPARTILHAMENTO
+cyberghost share <scan_dir>             # Compartilhar scan
+cyberghost share --team                 # Compartilhar com equipe
+cyberghost share --generate-link        # Gerar link de compartilhamento
+cyberghost import <file>                # Importar dados
+
+🐛 DEBUG
+cyberghost debug                        # Modo debug
+cyberghost debug --level=verbose        # Debug verbose
+cyberghost logs                         # Ver logs
+cyberghost logs --tail                  # Ver logs em tempo real
+cyberghost logs --error                 # Ver apenas erros
+
+🎯 COMANDOS ESPECÍFICOS POR MÓDULO
+
+🔍 RECONHECIMENTO
+cyberghost subdomains <domain>          # Apenas subdomínios
+cyberghost ports <target>               # Apenas portas
+cyberghost dns <domain>                 # Apenas DNS
+cyberghost whois <domain>               # Apenas WHOIS
+cyberghost webtech <url>                # Tecnologias web
+
+👤 SOCIAL MEDIA
+cyberghost social <username>            # Busca social
+cyberghost social <username> --platform=twitter  # Plataforma específica
+cyberghost email <email>                # Intel de email
+cyberghost username <username>          # Busca universal de username
+
+🏢 BUSINESS
+cyberghost company <name>               # Intel corporativa
+cyberghost employees <domain>           # Funcionários
+cyberghost brands <name>                # Monitoramento de marca
+
+🛡️ THREAT INTEL
+cyberghost shodan <ip/domain>           # Consulta Shodan
+cyberghost virustotal <target>          # Consulta VirusTotal
+cyberghost censys <target>              # Consulta Censys
+cyberghost threat <ip>                  # Multi-fontes threat intel
+
+🐙 GITHUB
+cyberghost github <user/org>            # Intel GitHub
+cyberghost github --secrets <user>      # Buscar segredos
+cyberghost github --repos <user>        # Listar repositórios
+
+📱 MOBILE
+cyberghost mobile <app_name>            # Intel mobile
+cyberghost playstore <app_id>           # Google Play
+cyberghost appstore <app_id>            # Apple Store
+
+⚡ COMANDOS RÁPIDOS ÚTEIS
+
+1. 🚀 SCAN RÁPIDO COM RELATÓRIO
+cyberghost scan exemplo.com --fast --html
+
+2. 📧 VERIFICAR EMAIL VAZADO
+cyberghost scan email@exemplo.com email --quick
+
+3. 👤 ENCONTRAR REDES SOCIAIS
+cyberghost scan @username social --all
+
+4. 🏢 DUE DILIGENCE EMPRESARIAL
+cyberghost scan "Nome Empresa" business --report
+
+5. 🛡️ VERIFICAR AMEAÇAS
+cyberghost scan IP-suspeito threat --apis
+
+6. 📁 LISTAR SCANS RECENTES
+cyberghost reports --recent
+
+7. ⚙️ VERIFICAR SAÚDE DO SISTEMA
+cyberghost doctor --quick
+
+8. 🧹 LIMPAR E OTIMIZAR
+cyberghost clean --optimize
+
+9. 🔄 ATUALIZAR TUDO
+cyberghost update --all --force
+
+10. 🎨 DASHBOARD VISUAL
+cyberghost dashboard --theme=dark
+
+🎭 COMANDOS PARA MODOS ESPECIAIS
+
+🧪 MODO LABORATÓRIO
+cyberghost lab                          # Modo laboratório
+cyberghost lab --sandbox                # Ambiente isolado
+cyberghost lab --experimental           # Recursos experimentais
+
+🎮 MODO CTF
+cyberghost ctf                          # Modo CTF
+cyberghost ctf --challenge              # Desafios CTF
+cyberghost ctf --practice               # Prática
+
+👨‍💻 MODO DESENVOLVEDOR
+cyberghost dev                          # Modo desenvolvedor
+cyberghost dev --plugins                # Gerenciar plugins
+cyberghost dev --api                    # API mode
+
+🎓 MODO EDUCATIVO
+cyberghost edu                          # Modo educativo
+cyberghost edu --tutorial               # Tutoriais
+cyberghost edu --guided                 # Modo guiado
+
+📋 EXEMPLOS PRÁTICOS
+
+EXEMPLO 1: PENTEST INICIAL
+cyberghost scan cliente.com recon --fast --threads=5
+cyberghost reports --last
+firefox ~/CyberGhost_Reports/scan_cliente*/report.html
+
+EXEMPLO 2: INVESTIGAÇÃO
+cyberghost scan @suspeito social --deep
+cyberghost scan email@suspeito.com email
+cyberghost correlate --input=scan_@suspeito/
+
+EXEMPLO 3: MONITORAMENTO CONTÍNUO
+cyberghost monitor empresa.com --interval=24h --alerts
+cyberghost dashboard --port=3000
+
+EXEMPLO 4: BATCH AUTOMATIZADO
+echo "alvo1.com" > targets.txt
+echo "alvo2.com" >> targets.txt
+echo "alvo3.com" >> targets.txt
+cyberghost batch targets.txt --concurrent=3
+
+EXEMPLO 5: THREAT HUNTING
+cyberghost scan IP-malicioso threat --apis=all
+cyberghost export scan_IP*/ --format=json
+
+🔧 COMANDOS DE MANUTENÇÃO
+
+1. 📦 BACKUP
+cyberghost backup                       # Backup completo
+cyberghost backup --config              # Backup configuração
+cyberghost backup --data                # Backup dados
+
+2. 🔄 RESTAURAÇÃO
+cyberghost restore <backup_file>        # Restaurar backup
+cyberghost restore --config             # Restaurar configuração
+
+3. 🛠️ REPARO
+cyberghost repair                       # Reparar instalação
+cyberghost repair --deps                # Reparar dependências
+cyberghost repair --tools               # Reparar ferramentas
+
+4. 📊 OTIMIZAÇÃO
+cyberghost optimize                     # Otimizar performance
+cyberghost optimize --cache             # Otimizar cache
+cyberghost optimize --db                # Otimizar banco de dados
+
+🎨 COMANDOS DE PERSONALIZAÇÃO
+
+1. 🎭 TEMAS
+cyberghost theme                        # Gerenciar temas
+cyberghost theme --list                 # Listar temas
+cyberghost theme --set=dark             # Definir tema
+cyberghost theme --custom               # Tema personalizado
+
+2. ⚡ ATALHOS
+cyberghost shortcuts                    # Gerenciar atalhos
+cyberghost shortcuts --add              # Adicionar atalho
+cyberghost shortcuts --list             # Listar atalhos
+
+3. 📝 SCRIPTS
+cyberghost scripts                      # Gerenciar scripts
+cyberghost scripts --run                # Executar script
+cyberghost scripts --create             # Criar script
+
+📞 COMANDOS DE SUPORTE
+
+1. ❓ AJUDA DETALHADA
+cyberghost help scan                    # Ajuda específica
+cyberghost help batch                   # Ajuda para batch
+cyberghost help --all                   # Toda ajuda
+
+2. 📚 DOCUMENTAÇÃO
+cyberghost docs                         # Abrir documentação
+cyberghost docs --offline               # Documentação offline
+cyberghost docs --search="scan"         # Buscar na doc
+
+3. 🐛 REPORTAR BUGS
+cyberghost bug                          # Reportar bug
+cyberghost bug --info                   # Info para bug report
+
+4. 💡 SUGERIR FEATURES
+cyberghost feature                      # Sugerir feature
+cyberghost feature --list               # Listar sugestões
+
+🚀 COMANDOS DE PRODUÇÃO
+
+1. 📊 SCAN COM METRICS
+cyberghost scan <target> --metrics      # Com métricas
+cyberghost scan <target> --benchmark    # Benchmark
+
+2. 🏭 SCALE OUT
+cyberghost scan <target> --distributed  # Distribuído
+cyberghost scan <target> --cluster      # Cluster
+
+3. 🔐 SCAN COM AUDIT TRAIL
+cyberghost scan <target> --audit        # Com auditoria
+cyberghost scan <target> --compliance   # Modo compliance
