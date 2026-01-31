@@ -100,5 +100,6 @@ A comprehensive OSINT (Open Source Intelligence) tool that combines traditional 
 
 #### **1. Clone Repository**
 ```bash
-git clone https://github.com/CyberGhost-Leonardo/CyberGhost-OSINT.git
+cd /usr/local/bin 
+git clone https://github.com/Leobatman/CyberGhost-OSINT.git
 cd CyberGhost-OSINT
