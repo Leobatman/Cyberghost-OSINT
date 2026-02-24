@@ -1,0 +1,170 @@
+# =============================================================================
+# CYBERGHOST OSINT ULTIMATE - StatefulSets
+# =============================================================================
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cyberghost-postgres
+  namespace: cyberghost
+spec:
+  serviceName: cyberghost-postgres-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cyberghost
+      component: postgres
+  template:
+    metadata:
+      labels:
+        app: cyberghost
+        component: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_DB
+          value: "cyberghost"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: db-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: db-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "cyberghost"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "cyberghost"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: init-scripts
+        configMap:
+          name: cyberghost-postgres-init
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-postgres-headless
+  namespace: cyberghost
+spec:
+  clusterIP: None
+  ports:
+  - port: 5432
+    name: postgres
+  selector:
+    app: cyberghost
+    component: postgres
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cyberghost-redis
+  namespace: cyberghost
+spec:
+  serviceName: cyberghost-redis-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cyberghost
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: cyberghost
+        component: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+        command: ["redis-server"]
+        args: ["--appendonly", "yes", "--requirepass", "$(REDIS_PASSWORD)"]
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: redis-password
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command: ["redis-cli", "ping"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command: ["redis-cli", "ping"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-redis-headless
+  namespace: cyberghost
+spec:
+  clusterIP: None
+  ports:
+  - port: 6379
+    name: redis
+  selector:
+    app: cyberghost
+    component: redis

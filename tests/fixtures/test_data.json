@@ -1,0 +1,79 @@
+{
+    "domains": [
+        "example.com",
+        "google.com",
+        "github.com",
+        "microsoft.com",
+        "amazon.com"
+    ],
+    "ips": [
+        "8.8.8.8",
+        "1.1.1.1",
+        "208.67.222.222",
+        "9.9.9.9"
+    ],
+    "emails": [
+        "test@example.com",
+        "admin@google.com",
+        "security@microsoft.com",
+        "info@github.com"
+    ],
+    "usernames": [
+        "admin",
+        "root",
+        "testuser",
+        "developer",
+        "security"
+    ],
+    "urls": [
+        "https://example.com",
+        "https://google.com/search?q=test",
+        "https://github.com/cyberghost",
+        "https://microsoft.com/en-us"
+    ],
+    "hashes": {
+        "md5": "5f4dcc3b5aa765d61d8327deb882cf99",
+        "sha1": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "sha256": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
+    },
+    "subdomains": [
+        "www.example.com",
+        "mail.example.com",
+        "admin.example.com",
+        "blog.example.com",
+        "api.example.com",
+        "dev.example.com",
+        "test.example.com",
+        "staging.example.com"
+    ],
+    "dns_records": {
+        "A": ["93.184.216.34"],
+        "MX": ["mail.example.com"],
+        "NS": ["ns1.example.com", "ns2.example.com"],
+        "TXT": ["v=spf1 include:_spf.example.com ~all"]
+    },
+    "http_headers": {
+        "server": "nginx/1.18.0",
+        "content-type": "text/html; charset=UTF-8",
+        "x-powered-by": "PHP/7.4.33",
+        "set-cookie": "PHPSESSID=abc123; path=/"
+    },
+    "technologies": [
+        {"name": "nginx", "version": "1.18.0"},
+        {"name": "PHP", "version": "7.4.33"},
+        {"name": "jQuery", "version": "3.6.0"},
+        {"name": "Bootstrap", "version": "5.2.0"}
+    ],
+    "threat_intel": {
+        "virustotal": {
+            "malicious": 2,
+            "suspicious": 1,
+            "harmless": 50,
+            "undetected": 47
+        },
+        "abuseipdb": {
+            "abuseConfidenceScore": 25,
+            "totalReports": 3
+        }
+    }
+}

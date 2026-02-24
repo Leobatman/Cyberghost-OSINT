@@ -1,0 +1,266 @@
+# =============================================================================
+# CYBERGHOST OSINT ULTIMATE - Kubernetes Deployment
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cyberghost-core
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: core
+    version: 7.0.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cyberghost
+      component: core
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: cyberghost
+        component: core
+        version: 7.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: cyberghost-sa
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: cyberghost
+        image: cyberghost/cyberghost-osint:7.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        - containerPort: 9050
+          name: tor-socks
+          protocol: TCP
+        - containerPort: 9051
+          name: tor-control
+          protocol: TCP
+        env:
+        - name: CYBERGHOST_MODE
+          value: "production"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: DB_HOST
+          value: "cyberghost-postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "cyberghost"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: db-user
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: db-password
+        - name: REDIS_HOST
+          value: "cyberghost-redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: redis-password
+        - name: ENABLE_TOR
+          value: "true"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: data
+          mountPath: /opt/cyberghost/data
+        - name: reports
+          mountPath: /opt/cyberghost/reports
+        - name: config
+          mountPath: /home/cyberghost/.cyberghost
+        - name: tmp
+          mountPath: /tmp
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 30
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: cyberghost-data-pvc
+      - name: reports
+        persistentVolumeClaim:
+          claimName: cyberghost-reports-pvc
+      - name: config
+        configMap:
+          name: cyberghost-config
+      - name: tmp
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cyberghost
+              topologyKey: kubernetes.io/hostname
+      tolerations:
+      - key: "cyberghost"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cyberghost-worker
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: worker
+    version: 7.0.0
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: cyberghost
+      component: worker
+  template:
+    metadata:
+      labels:
+        app: cyberghost
+        component: worker
+    spec:
+      containers:
+      - name: worker
+        image: cyberghost/cyberghost-osint:7.0.0
+        command: ["celery", "-A", "src.tasks", "worker", "--loglevel=info"]
+        env:
+        - name: REDIS_HOST
+          value: "cyberghost-redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: redis-password
+        - name: DB_HOST
+          value: "cyberghost-postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "cyberghost"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: db-user
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: db-password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cyberghost-beat
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: beat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cyberghost
+      component: beat
+  template:
+    metadata:
+      labels:
+        app: cyberghost
+        component: beat
+    spec:
+      containers:
+      - name: beat
+        image: cyberghost/cyberghost-osint:7.0.0
+        command: ["celery", "-A", "src.tasks", "beat", "--loglevel=info"]
+        env:
+        - name: REDIS_HOST
+          value: "cyberghost-redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cyberghost-secrets
+              key: redis-password
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

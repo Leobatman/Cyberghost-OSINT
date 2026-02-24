@@ -1,0 +1,215 @@
+# =============================================================================
+# CYBERGHOST OSINT ULTIMATE - Kubernetes Services
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-core
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: core
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+    protocol: TCP
+  - port: 8443
+    targetPort: 8443
+    name: https
+    protocol: TCP
+  - port: 9050
+    targetPort: 9050
+    name: tor-socks
+    protocol: TCP
+  - port: 9051
+    targetPort: 9051
+    name: tor-control
+    protocol: TCP
+  selector:
+    app: cyberghost
+    component: core
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-core-headless
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: core
+spec:
+  clusterIP: None
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cyberghost
+    component: core
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-postgres
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  selector:
+    app: cyberghost
+    component: postgres
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-redis
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    app: cyberghost
+    component: redis
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-elasticsearch
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: elasticsearch
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9200
+    targetPort: 9200
+    name: http
+  - port: 9300
+    targetPort: 9300
+    name: transport
+  selector:
+    app: cyberghost
+    component: elasticsearch
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-kibana
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: kibana
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5601
+    targetPort: 5601
+    name: http
+  selector:
+    app: cyberghost
+    component: kibana
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-minio
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: minio
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9000
+    targetPort: 9000
+    name: api
+  - port: 9001
+    targetPort: 9001
+    name: console
+  selector:
+    app: cyberghost
+    component: minio
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-flower
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: flower
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5555
+    targetPort: 5555
+    name: http
+  selector:
+    app: cyberghost
+    component: flower
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-nginx
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: nginx
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http
+    protocol: TCP
+  - port: 443
+    targetPort: 443
+    name: https
+    protocol: TCP
+  selector:
+    app: cyberghost
+    component: nginx
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberghost-portainer
+  namespace: cyberghost
+  labels:
+    app: cyberghost
+    component: portainer
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9000
+    targetPort: 9000
+    name: http
+  selector:
+    app: cyberghost
+    component: portainer

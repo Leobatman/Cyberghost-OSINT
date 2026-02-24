@@ -1,0 +1,203 @@
+# =============================================================================
+# CYBERGHOST OSINT ULTIMATE - Kubernetes ConfigMaps
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cyberghost-config
+  namespace: cyberghost
+data:
+  settings.conf: |
+    # CYBERGHOST OSINT Configuration
+    LOG_LEVEL=INFO
+    LOG_FORMAT=json
+    SCAN_THREADS=50
+    SCAN_TIMEOUT=3600
+    ENABLE_TOR=true
+    ENABLE_AI_ANALYSIS=true
+    ENABLE_DARKWEB=true
+    REPORT_FORMAT=html
+    CACHE_ENABLED=true
+    AUDIT_LOGGING=true
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cyberghost-nginx-config
+  namespace: cyberghost
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+
+    events {
+        worker_connections 4096;
+        multi_accept on;
+        use epoll;
+    }
+
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+
+        access_log /var/log/nginx/access.log main buffer=32k flush=5s;
+
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        client_max_body_size 100m;
+
+        gzip on;
+        gzip_vary on;
+        gzip_comp_level 6;
+        gzip_types text/plain text/css application/json application/javascript;
+
+        upstream cyberghost {
+            server cyberghost-core:8080;
+        }
+
+        server {
+            listen 80;
+            server_name _;
+
+            location / {
+                proxy_pass http://cyberghost;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_cache_bypass $http_upgrade;
+            }
+
+            location /api/ {
+                proxy_pass http://cyberghost/api/;
+                proxy_http_version 1.1;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+            }
+
+            location /static/ {
+                alias /usr/share/nginx/html/static/;
+                expires 1y;
+                add_header Cache-Control "public, immutable";
+            }
+
+            location /health {
+                access_log off;
+                return 200 "healthy\n";
+            }
+        }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cyberghost-postgres-init
+  namespace: cyberghost
+data:
+  init.sql: |
+    CREATE DATABASE cyberghost;
+    CREATE USER cyberghost WITH PASSWORD 'cyberghost';
+    GRANT ALL PRIVILEGES ON DATABASE cyberghost TO cyberghost;
+    
+    \c cyberghost
+    
+    CREATE TABLE scans (
+        id SERIAL PRIMARY KEY,
+        scan_id VARCHAR(64) UNIQUE NOT NULL,
+        target TEXT NOT NULL,
+        scan_type VARCHAR(50) NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending',
+        start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        end_time TIMESTAMP,
+        duration INTEGER,
+        results JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE TABLE results (
+        id SERIAL PRIMARY KEY,
+        scan_id VARCHAR(64) NOT NULL,
+        module VARCHAR(100) NOT NULL,
+        data JSONB NOT NULL,
+        severity VARCHAR(20) DEFAULT 'info',
+        tags TEXT[],
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (scan_id) REFERENCES scans(scan_id)
+    );
+    
+    CREATE TABLE targets (
+        id SERIAL PRIMARY KEY,
+        target TEXT UNIQUE NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_scanned TIMESTAMP,
+        scan_count INTEGER DEFAULT 0,
+        notes TEXT,
+        tags TEXT[]
+    );
+    
+    CREATE INDEX idx_scans_target ON scans(target);
+    CREATE INDEX idx_scans_status ON scans(status);
+    CREATE INDEX idx_results_scan_id ON results(scan_id);
+    CREATE INDEX idx_targets_last_scanned ON targets(last_scanned);
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cyberghost-prometheus-rules
+  namespace: cyberghost
+data:
+  rules.yml: |
+    groups:
+    - name: cyberghost
+      rules:
+      - alert: HighErrorRate
+        expr: rate(cyberghost_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} for the last 5 minutes"
+      
+      - alert: SlowScans
+        expr: cyberghost_scan_duration_seconds > 3600
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Scan taking too long"
+          description: "Scan {{ $labels.scan_id }} has been running for {{ $value }} seconds"
+      
+      - alert: LowDiskSpace
+        expr: cyberghost_disk_free_bytes < 1e9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Only {{ $value }} bytes free"
+      
+      - alert: ApiRateLimit
+        expr: cyberghost_api_rate_limit_remaining < 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API rate limit low"
+          description: "Only {{ $value }} requests remaining for {{ $labels.api }}"

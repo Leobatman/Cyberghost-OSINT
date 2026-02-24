@@ -1,0 +1,140 @@
+# =============================================================================
+# CYBERGHOST OSINT ULTIMATE - Network Policies
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cyberghost-default-deny
+  namespace: cyberghost
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cyberghost-allow-core
+  namespace: cyberghost
+spec:
+  podSelector:
+    matchLabels:
+      app: cyberghost
+      component: core
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cyberghost
+          component: nginx
+    - podSelector:
+        matchLabels:
+          app: cyberghost
+          component: worker
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 8443
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: cyberghost
+          component: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: cyberghost
+          component: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cyberghost-allow-postgres
+  namespace: cyberghost
+spec:
+  podSelector:
+    matchLabels:
+      app: cyberghost
+      component: postgres
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cyberghost
+    ports:
+    - protocol: TCP
+      port: 5432
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cyberghost-allow-redis
+  namespace: cyberghost
+spec:
+  podSelector:
+    matchLabels:
+      app: cyberghost
+      component: redis
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cyberghost
+    ports:
+    - protocol: TCP
+      port: 6379
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cyberghost-allow-nginx
+  namespace: cyberghost
+spec:
+  podSelector:
+    matchLabels:
+      app: cyberghost
+      component: nginx
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: cyberghost
+          component: core
+    ports:
+    - protocol: TCP
+      port: 8080

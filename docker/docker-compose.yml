@@ -1,0 +1,285 @@
+# =============================================================================
+# CYBERGHOST OSINT ULTIMATE - Docker Compose Configuration
+# =============================================================================
+
+version: '3.8'
+
+services:
+  cyberghost-core:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: cyberghost-core
+    hostname: cyberghost-osint
+    restart: unless-stopped
+    ports:
+      - "8080:8080"  # Web dashboard
+      - "8443:8443"  # API server
+      - "9050:9050"  # Tor SOCKS
+      - "9051:9051"  # Tor Control
+    volumes:
+      - ../data:/opt/cyberghost/data:rw
+      - ../reports:/opt/cyberghost/reports:rw
+      - ../config:/opt/cyberghost/config:ro
+      - ../logs:/opt/cyberghost/logs:rw
+      - cyberghost_temp:/opt/cyberghost/temp
+      - cyberghost_cache:/home/cyberghost/.cyberghost/cache
+    environment:
+      - TZ=UTC
+      - CYBERGHOST_MODE=production
+      - LOG_LEVEL=INFO
+      - ENABLE_WEB_DASHBOARD=true
+      - ENABLE_API_SERVER=true
+      - ENABLE_TOR=true
+      - API_RATE_LIMIT=100
+      - MAX_CONCURRENT_SCANS=5
+    networks:
+      - cyberghost_net
+    depends_on:
+      - cyberghost-db
+      - cyberghost-redis
+    healthcheck:
+      test: ["CMD", "pgrep", "tor"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /run
+
+  cyberghost-db:
+    image: postgres:15-alpine
+    container_name: cyberghost-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=cyberghost
+      - POSTGRES_USER=cyberghost
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-cyberghost123}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8
+    volumes:
+      - cyberghost_postgres:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cyberghost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cyberghost-redis:
+    image: redis:7-alpine
+    container_name: cyberghost-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    volumes:
+      - cyberghost_redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cyberghost-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: cyberghost-elasticsearch
+    restart: unless-stopped
+    environment:
+      - node.name=cyberghost-es
+      - cluster.name=cyberghost-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - cyberghost_elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cyberghost-kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: cyberghost-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://cyberghost-elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - cyberghost_net
+    depends_on:
+      - cyberghost-elasticsearch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5601/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cyberghost-nginx:
+    image: nginx:alpine
+    container_name: cyberghost-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/sites:/etc/nginx/sites-enabled:ro
+      - ../reports:/usr/share/nginx/html/reports:ro
+      - ../web:/usr/share/nginx/html:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - cyberghost_net
+    depends_on:
+      - cyberghost-core
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cyberghost-celery:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.celery
+    container_name: cyberghost-celery
+    restart: unless-stopped
+    command: celery -A src.tasks worker --loglevel=info
+    volumes:
+      - ../:/opt/cyberghost:ro
+      - cyberghost_temp:/opt/cyberghost/temp
+    environment:
+      - REDIS_HOST=cyberghost-redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
+      - DB_HOST=cyberghost-db
+      - DB_PORT=5432
+      - DB_NAME=cyberghost
+      - DB_USER=cyberghost
+      - DB_PASSWORD=${DB_PASSWORD:-cyberghost123}
+    networks:
+      - cyberghost_net
+    depends_on:
+      - cyberghost-redis
+      - cyberghost-db
+    deploy:
+      replicas: 2
+
+  cyberghost-flower:
+    image: mher/flower:2.0
+    container_name: cyberghost-flower
+    restart: unless-stopped
+    command: celery flower --broker=redis://:${REDIS_PASSWORD:-redis123}@cyberghost-redis:6379/0
+    ports:
+      - "5555:5555"
+    networks:
+      - cyberghost_net
+    depends_on:
+      - cyberghost-redis
+      - cyberghost-celery
+
+  cyberghost-minio:
+    image: minio/minio:latest
+    container_name: cyberghost-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD:-minioadmin123}
+    volumes:
+      - cyberghost_minio:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cyberghost-portainer:
+    image: portainer/portainer-ce:latest
+    container_name: cyberghost-portainer
+    restart: unless-stopped
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - cyberghost_portainer:/data
+    ports:
+      - "9002:9000"
+    networks:
+      - cyberghost_net
+
+  cyberghost-watchtower:
+    image: containrrr/watchtower
+    container_name: cyberghost-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 86400 --cleanup
+    networks:
+      - cyberghost_net
+
+networks:
+  cyberghost_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+
+volumes:
+  cyberghost_postgres:
+    driver: local
+  cyberghost_redis:
+    driver: local
+  cyberghost_elasticsearch:
+    driver: local
+  cyberghost_minio:
+    driver: local
+  cyberghost_portainer:
+    driver: local
+  cyberghost_temp:
+    driver: local
+  cyberghost_cache:
+    driver: local

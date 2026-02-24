@@ -1,0 +1,41 @@
+# =============================================================================
+# CYBERGHOST OSINT ULTIMATE - Pod Disruption Budget
+# =============================================================================
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cyberghost-core-pdb
+  namespace: cyberghost
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: cyberghost
+      component: core
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cyberghost-worker-pdb
+  namespace: cyberghost
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: cyberghost
+      component: worker
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cyberghost-postgres-pdb
+  namespace: cyberghost
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cyberghost
+      component: postgres
